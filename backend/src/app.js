@@ -1,10 +1,9 @@
 const express = require('express');
+const patientsRoutes = require('./routes/patients.routes');
 const app = express();
 
 app.use(express.json());
 
-app.get('/', (req, res)=> {
-    res.json({ message: "Hospital API running"});
-});
+app.use('/api/patients', patientsRoutes);
 
 module.exports = app;
