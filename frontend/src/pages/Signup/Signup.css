@@ -1,0 +1,81 @@
+.Signup-form{
+    width: 300px;
+}
+
+.Signup-form .signup-header{
+    margin-bottom: 50px;
+}
+
+.Signup-form h1, .Signup-form p{
+    margin: 0;
+}
+
+.Signup-form h1{
+    margin-top: 30px;
+}
+
+.Signup-form input[type="text"],
+.Signup-form input[type="password"]
+{
+    width: 100%;
+}
+
+.Signup-form > *{
+    margin: 15px 0;
+}
+
+.radio-button-group{
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.Signup-form .submit-btn-aligner{
+    width: 100%;
+    text-align: center;
+}
+
+.Signup-form .submit-btn-aligner input{
+    width: 70%;
+}
+
+.Signup-form .radio-btn{
+    width: 45%;
+    text-align: center;
+}
+
+.Signup-form .signup-input-phone div{
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.Signup-form .vertical-line{
+    background-color: #929292;
+    width: 2px;
+    height: 25px;
+}
+
+.Signup-form .signup-input-phone .country-code-border{
+    color: #929292;
+    font-weight: 500;
+    margin: 0 10px;
+}
+
+.otp-container{
+    display: flex;
+    width: 100%;
+    gap: 10px;
+}
+
+.otp-container input{
+    font-size: 45px;
+}
+
+@media only screen and (min-width: 600px)  {
+    .Signup-form{
+        width: 400px;
+    }
+    
+}
