@@ -45,12 +45,6 @@
     text-align: center;
 }
 
-.Signup-form .signup-input-phone div{
-    display: flex;
-    gap: 15px;
-    align-items: center;
-}
-
 .Signup-form .vertical-line{
     background-color: #929292;
     width: 2px;
@@ -71,10 +65,6 @@
 
 .otp-container input{
     font-size: 45px;
-}
-
-.Signup-form .country-flag{
-    width: 50px;
 }
 
 @media only screen and (min-width: 600px)  {
