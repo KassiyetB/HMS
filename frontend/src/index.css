@@ -3,7 +3,7 @@
   line-height: 1.5;
   font-weight: 400;
   font-size: 20px;
-  --grey-text: #929292;
+  --gray-text: #929292;
   color-scheme: light dark;
   color: white;
   background-color: black;
@@ -12,6 +12,9 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  --select-bg: black;
+  --select-text: white;
 }
 
 *{
@@ -47,11 +50,11 @@ input[type="password"]{
   font-size: 20px;
   min-height: 48px;
   border-radius: 10px;
-  border: 1px solid var(--grey-text);
+  border: 1px solid var(--gray-text);
 }
 
 .gray-text{
-  color: var(--grey-text);
+  color: var(--gray-text);
 }
 
 button, 
@@ -81,7 +84,7 @@ input[type="submit"]:focus-visible {
 .radio-btn{
   display: inline-block;
   border-radius: 10px;
-  border: 1px solid var(--grey-text);
+  border: 1px solid var(--gray-text);
   padding: 0.6em 1.2em;
   font-size: 20px;
   font-weight: 500;
@@ -100,6 +103,8 @@ input[type="submit"]:focus-visible {
   :root {
     color: black;
     background-color: white;
+    --select-bg: white;
+    --select-text: black;
   }
   a:hover {
     color: #747bff;
