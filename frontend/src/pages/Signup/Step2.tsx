@@ -14,6 +14,7 @@ export default function Step2() {
     const [countries, setCountries] = useState<CountryOption[]>([]);
     const [selected, setSelected] = useState<CountryOption | null>(null);
 
+
     const customStyles = {
         // 1. The text shown after selection
         singleValue: (base: any) => ({
@@ -26,12 +27,12 @@ export default function Step2() {
             color: 'var(--select-text-color)',
         }),
         // 3. The items in the dropdown
-        option: (base: any, state: any) => ({
+        option: (base: any) => ({
             ...base,
             color: 'black',
         }),
         // 4. The container background
-        control: (base: any, state: any) => ({
+        control: (base: any) => ({
             ...base,
             backgroundColor: 'var(--select-bg)',
             border: '1px solid var(--gray-text)', 
@@ -58,9 +59,18 @@ export default function Step2() {
             }))
             .sort((a, b) => a.label.localeCompare(b.label));
             setCountries(formatted);
-            console.log(data);
-            return formatted;
-        });
+            
+            fetch("http://ip-api.com/json/")
+            .then(response => response.json())
+            .then((data)=> {
+                const detectedCountry = formatted.find(c => c.value === data.countryCode);
+                if(detectedCountry){
+                    setSelected(detectedCountry);
+                }
+            })
+        })
+        .catch(err => console.error("Error initialization:", err));
+    
     }, []);
 
     return(
