@@ -15,7 +15,8 @@
 }
 
 .Signup-form input[type="text"],
-.Signup-form input[type="password"]
+.Signup-form input[type="password"],
+.Signup-form input[type="tel"]
 {
     width: 100%;
 }

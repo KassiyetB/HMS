@@ -45,7 +45,8 @@ h1 {
 
 
 input[type="text"],
-input[type="password"]{
+input[type="password"],
+input[type="tel"]{
   padding-left: 20px;
   font-size: 20px;
   min-height: 48px;

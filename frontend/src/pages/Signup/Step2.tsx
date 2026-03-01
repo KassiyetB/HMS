@@ -1,18 +1,36 @@
-import { useEffect, useState } from 'react'
 import './Signup.css'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
+import { useOutletContext } from "react-router-dom";
+import type { UserObject } from "@/layouts/SignupLayout";
+
+type ContextType = {
+  userData: UserObject;
+  setUserData: React.Dispatch<React.SetStateAction<UserObject>>;
+};
+
 
 type CountryOption = {
-        value: string;
+        value: string; // Country code
         phoneCode: string; // The full phone code (e.g., +1)
         label: string; // The country name
         flag: string;  // The flag image URL
     }
 
 export default function Step2() {
+    const navigate = useNavigate();
+    
+    //const {userData, setUserData} = useOutletContext<ContextType>();
+
+    const handleSubmit = (e: React.SubmitEvent) => {
+        e.preventDefault();
+        navigate("/signup/step3");
+    }
 
     const [countries, setCountries] = useState<CountryOption[]>([]);
     const [selected, setSelected] = useState<CountryOption | null>(null);
+    const [phoneNumber, setPhoneNumber] = useState<string>("");
 
 
     const customStyles = {
@@ -74,7 +92,7 @@ export default function Step2() {
     }, []);
 
     return(
-        <form className='Signup-form'>
+        <form className='Signup-form' onSubmit={handleSubmit}>
             <h1>Sign up</h1>
             <p>Please confirm your country code and enter your phone number</p> 
             <div id="s-input-1" className="signup-input-phone">
@@ -97,7 +115,15 @@ export default function Step2() {
                 <div style={{display: "flex", gap:"15px", alignItems:"center"}}>
                     <p className='country-code'>{selected?.phoneCode}</p>
                     <div className='vertical-line'></div>
-                    <input type='text' className='phone-number' inputMode='numeric' pattern='[0-9]{3} [0-9]{3} [0-9]{2} [0-9]{2}' placeholder='000 000 00 00'></input>
+                    <input 
+                        type='tel' 
+                        className='phone-number' 
+                        value={phoneNumber}
+                        onChange={(e)=> setPhoneNumber(e.target.value)}
+                        pattern='[0-9]{3} [0-9]{3} [0-9]{2} [0-9]{2}' 
+                        placeholder='000 000 00 00' 
+                        required 
+                    />
                 </div>
                 <hr />
             </div>
