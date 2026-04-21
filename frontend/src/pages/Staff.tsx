@@ -1,60 +1,57 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Badge, StatCard, Toast, Avatar, Modal, Field } from '../components/ui'
-import {
-  INITIAL_STAFF, STAFF_ROLES, STAFF_STATUSES, SPECIALTIES,
-  type StaffMember, type StaffStatus, type StaffRole,
-} from '@/data/mockData'
+import { Spinner, ErrorBox } from '../hooks/useApi'
+import { staffApi, type StaffRow, type CreateStaffPayload } from '../services/api'
+import { STAFF_ROLES, STAFF_STATUSES, SPECIALTIES } from '../data/mockData'
 
 // ── Types ─────────────────────────────────────────
 interface StaffFormData {
-  name:      string
-  role:      StaffRole
-  specialty: string
-  status:    StaffStatus
-  exp:       string
-  rating:    string | number
-  phone:     string
-  email:     string
+  name:       string
+  role:       string
+  specialty:  string
+  status:     string
+  experience: string
+  rating:     string
+  phone:      string
+  email:      string
 }
 
 type ModalState =
   | { type: 'add' }
-  | { type: 'edit' | 'delete' | 'view'; staff: StaffMember }
+  | { type: 'edit' | 'delete' | 'view'; staff: StaffRow }
   | null
 
-interface FormErrors { name?: string; exp?: string; phone?: string; email?: string; rating?: string }
 interface ToastState { msg: string; color: string }
+interface FormErrors { name?: string; experience?: string; rating?: string; phone?: string; email?: string }
+interface StatsData  { total: string; on_duty: string; off_duty: string; doctors: string; nurses: string; avg_rating: string }
 
 const EMPTY: StaffFormData = {
-  name: '', role: 'Doctor', specialty: SPECIALTIES[0], status: 'On Duty',
-  exp: '', rating: '', phone: '', email: '',
+  name: '', role: 'Doctor', specialty: SPECIALTIES[0],
+  status: 'On Duty', experience: '', rating: '', phone: '', email: '',
 }
 
-let _nextId = INITIAL_STAFF.length
-const genId = (): string => `S-${String(++_nextId).padStart(3, '0')}`
-
-// ── Staff Form ────────────────────────────────────
+// ── Staff Form ─────────────────────────────────────
 interface StaffFormProps {
   initial:  StaffFormData
-  onSave:   (form: StaffFormData) => void
+  onSave:   (form: StaffFormData) => Promise<void>
   onCancel: () => void
   isEdit:   boolean
+  saving:   boolean
 }
 
-function StaffForm({ initial, onSave, onCancel, isEdit }: StaffFormProps) {
+function StaffForm({ initial, onSave, onCancel, isEdit, saving }: StaffFormProps) {
   const [form, setForm]     = useState<StaffFormData>({ ...initial })
   const [errors, setErrors] = useState<FormErrors>({})
-  const set = <K extends keyof StaffFormData>(k: K, v: StaffFormData[K]) =>
-    setForm(f => ({ ...f, [k]: v }))
+  const set = <K extends keyof StaffFormData>(k: K, v: string) => setForm(f => ({ ...f, [k]: v }))
 
   const validate = (): boolean => {
     const e: FormErrors = {}
-    if (!form.name.trim())  e.name   = 'Name is required'
-    if (!form.phone.trim()) e.phone  = 'Phone is required'
-    if (!form.email.trim()) e.email  = 'Email is required'
-    if (!form.exp.trim())   e.exp    = 'Experience is required'
+    if (!form.name.trim())       e.name       = 'Name is required'
+    if (!form.phone.trim())      e.phone      = 'Phone is required'
+    if (!form.email.trim())      e.email      = 'Email is required'
+    if (!form.experience.trim()) e.experience = 'Experience is required'
     const r = Number(form.rating)
-    if (!form.rating || r < 1 || r > 5) e.rating = 'Rating must be between 1 and 5'
+    if (!form.rating || r < 1 || r > 5) e.rating = 'Rating must be 1–5'
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -65,60 +62,50 @@ function StaffForm({ initial, onSave, onCancel, isEdit }: StaffFormProps) {
         <Field label="Full Name" error={errors.name}>
           <input value={form.name} onChange={e => set('name', e.target.value)} className={errors.name ? 'error' : ''} placeholder="e.g. Dr. Asel Bekova" />
         </Field>
-
         <Field label="Role" half>
-          <select value={form.role} onChange={e => set('role', e.target.value as StaffRole)}>
+          <select value={form.role} onChange={e => set('role', e.target.value)}>
             {STAFF_ROLES.map(r => <option key={r}>{r}</option>)}
           </select>
         </Field>
-
         <Field label="Status" half>
-          <select value={form.status} onChange={e => set('status', e.target.value as StaffStatus)}>
+          <select value={form.status} onChange={e => set('status', e.target.value)}>
             {STAFF_STATUSES.map(s => <option key={s}>{s}</option>)}
           </select>
         </Field>
-
         <Field label="Specialty">
           <select value={form.specialty} onChange={e => set('specialty', e.target.value)}>
             {SPECIALTIES.map(s => <option key={s}>{s}</option>)}
             <option value="—">—</option>
           </select>
         </Field>
-
-        <Field label="Experience" half error={errors.exp}>
-          <input value={form.exp} onChange={e => set('exp', e.target.value)} className={errors.exp ? 'error' : ''} placeholder="e.g. 5 yrs" />
+        <Field label="Experience" half error={errors.experience}>
+          <input value={form.experience} onChange={e => set('experience', e.target.value)} className={errors.experience ? 'error' : ''} placeholder="e.g. 5 yrs" />
         </Field>
-
         <Field label="Rating (1–5)" half error={errors.rating}>
           <input type="number" value={form.rating} onChange={e => set('rating', e.target.value)} className={errors.rating ? 'error' : ''} min={1} max={5} step={0.1} placeholder="4.8" />
         </Field>
-
         <Field label="Phone" half error={errors.phone}>
           <input value={form.phone} onChange={e => set('phone', e.target.value)} className={errors.phone ? 'error' : ''} placeholder="+7 700 000 0000" />
         </Field>
-
         <Field label="Email" half error={errors.email}>
           <input type="email" value={form.email} onChange={e => set('email', e.target.value)} className={errors.email ? 'error' : ''} placeholder="name@medicare.kz" />
         </Field>
       </div>
-
       <div className="modal-footer" style={{ padding: 0, marginTop: 20 }}>
-        <button className="btn btn-ghost"   onClick={onCancel}>Cancel</button>
-        <button className="btn btn-primary" onClick={() => { if (validate()) onSave(form) }}>
-          {isEdit ? 'Save Changes' : 'Add Staff Member'}
+        <button className="btn btn-ghost" onClick={onCancel} disabled={saving}>Cancel</button>
+        <button className="btn btn-primary" onClick={() => { if (validate()) onSave(form) }} disabled={saving}>
+          {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Staff Member'}
         </button>
       </div>
     </div>
   )
 }
 
-// ── View Modal ────────────────────────────────────
-interface ViewModalProps { staff: StaffMember; onClose: () => void; onEdit: () => void }
-
-function ViewModal({ staff, onClose, onEdit }: ViewModalProps) {
+// ── View Modal ─────────────────────────────────────
+function ViewModal({ staff, onClose, onEdit }: { staff: StaffRow; onClose: () => void; onEdit: () => void }) {
   const rows: [string, string | number][] = [
-    ['Staff ID', staff.id], ['Role', staff.role], ['Specialty', staff.specialty],
-    ['Experience', staff.exp], ['Rating', `${staff.rating} / 5`],
+    ['Staff ID', staff.staff_id], ['Role', staff.role], ['Specialty', staff.specialty],
+    ['Experience', staff.experience], ['Rating', `${staff.rating} / 5`],
     ['Phone', staff.phone], ['Email', staff.email],
   ]
   return (
@@ -129,9 +116,8 @@ function ViewModal({ staff, onClose, onEdit }: ViewModalProps) {
           <div style={{ fontSize: 16, fontWeight: 600 }}>{staff.name}</div>
           <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{staff.specialty}</div>
         </div>
-        <Badge status={staff.status} />
+        <Badge status={staff.status as any} />
       </div>
-
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px', marginBottom: 16 }}>
         {rows.map(([k, v]) => (
           <div key={k}>
@@ -140,26 +126,22 @@ function ViewModal({ staff, onClose, onEdit }: ViewModalProps) {
           </div>
         ))}
       </div>
-
       {staff.role === 'Doctor' && (
         <div style={{ background: 'var(--bg)', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--border)', marginBottom: 16 }}>
           <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Current Patients</div>
           <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)' }}>{staff.patients}</div>
         </div>
       )}
-
       <div className="modal-footer" style={{ padding: 0 }}>
-        <button className="btn btn-ghost"   onClick={onClose}>Close</button>
+        <button className="btn btn-ghost" onClick={onClose}>Close</button>
         <button className="btn btn-primary" onClick={onEdit}>Edit</button>
       </div>
     </Modal>
   )
 }
 
-// ── Delete Confirm ────────────────────────────────
-interface DeleteConfirmProps { staff: StaffMember; onConfirm: () => void; onCancel: () => void }
-
-function DeleteConfirm({ staff, onConfirm, onCancel }: DeleteConfirmProps) {
+// ── Delete Confirm ─────────────────────────────────
+function DeleteConfirm({ staff, onConfirm, onCancel, deleting }: { staff: StaffRow; onConfirm: () => void; onCancel: () => void; deleting: boolean }) {
   return (
     <Modal title="Remove Staff Member" onClose={onCancel} maxWidth={420}>
       <div style={{ textAlign: 'center', padding: '0.5rem 0 1rem' }}>
@@ -167,27 +149,20 @@ function DeleteConfirm({ staff, onConfirm, onCancel }: DeleteConfirmProps) {
         <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>
           Remove <span style={{ color: 'var(--accent)' }}>{staff.name}</span>?
         </div>
-        <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24 }}>
-          This will permanently delete the staff record and cannot be undone.
-        </div>
+        <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24 }}>This cannot be undone.</div>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-          <button className="btn btn-ghost"  onClick={onCancel}>Cancel</button>
-          <button className="btn btn-danger" onClick={onConfirm}>Yes, Remove</button>
+          <button className="btn btn-ghost" onClick={onCancel} disabled={deleting}>Cancel</button>
+          <button className="btn btn-danger" onClick={onConfirm} disabled={deleting}>
+            {deleting ? 'Removing…' : 'Yes, Remove'}
+          </button>
         </div>
       </div>
     </Modal>
   )
 }
 
-// ── Staff Card ────────────────────────────────────
-interface StaffCardProps {
-  staff:    StaffMember
-  onView:   () => void
-  onEdit:   () => void
-  onDelete: () => void
-}
-
-function StaffCard({ staff, onView, onEdit, onDelete }: StaffCardProps) {
+// ── Staff Card ─────────────────────────────────────
+function StaffCard({ staff, onView, onEdit, onDelete }: { staff: StaffRow; onView: () => void; onEdit: () => void; onDelete: () => void }) {
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -196,9 +171,8 @@ function StaffCard({ staff, onView, onEdit, onDelete }: StaffCardProps) {
           <div style={{ fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{staff.name}</div>
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>{staff.specialty}</div>
         </div>
-        <Badge status={staff.status} />
+        <Badge status={staff.status as any} />
       </div>
-
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
         {staff.role === 'Doctor' && (
           <div style={{ textAlign: 'center' }}>
@@ -207,8 +181,8 @@ function StaffCard({ staff, onView, onEdit, onDelete }: StaffCardProps) {
           </div>
         )}
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 2 }}>Experience</div>
-          <div style={{ fontWeight: 600 }}>{staff.exp}</div>
+          <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 2 }}>Exp</div>
+          <div style={{ fontWeight: 600 }}>{staff.experience}</div>
         </div>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 2 }}>Rating</div>
@@ -219,7 +193,6 @@ function StaffCard({ staff, onView, onEdit, onDelete }: StaffCardProps) {
           <div style={{ fontWeight: 500, fontSize: 12 }}>{staff.role}</div>
         </div>
       </div>
-
       <div style={{ display: 'flex', gap: 6, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
         <button onClick={onView}   style={{ flex: 1, padding: '6px', borderRadius: 6, border: '1px solid var(--border-2)', background: 'none', color: 'var(--muted)',  cursor: 'pointer', fontSize: 12 }}>👁 View</button>
         <button onClick={onEdit}   style={{ flex: 1, padding: '6px', borderRadius: 6, border: '1px solid var(--border-2)', background: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: 12 }}>✏️ Edit</button>
@@ -229,10 +202,15 @@ function StaffCard({ staff, onView, onEdit, onDelete }: StaffCardProps) {
   )
 }
 
-// ── Main Page ─────────────────────────────────────
+// ── Main Page ──────────────────────────────────────
 export default function Staff() {
-  const [staff, setStaff]   = useState<StaffMember[]>(INITIAL_STAFF)
+  const [staff, setStaff]   = useState<StaffRow[]>([])
+  const [stats, setStats]   = useState<StatsData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError]   = useState<string | null>(null)
   const [modal, setModal]   = useState<ModalState>(null)
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [search, setSearch] = useState('')
   const [filterRole, setFilterRole]     = useState('All')
   const [filterStatus, setFilterStatus] = useState('All')
@@ -243,40 +221,86 @@ export default function Staff() {
     setTimeout(() => setToast(null), 2800)
   }
 
-  const filtered = staff.filter(s => {
-    const q = search.toLowerCase()
-    return (
-      (!q || s.name.toLowerCase().includes(q) || s.specialty.toLowerCase().includes(q) || s.id.toLowerCase().includes(q)) &&
-      (filterRole   === 'All' || s.role   === filterRole) &&
-      (filterStatus === 'All' || s.status === filterStatus)
-    )
-  })
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const params: Record<string, string> = {}
+      if (search)                 params.search = search
+      if (filterRole !== 'All')   params.role   = filterRole
+      if (filterStatus !== 'All') params.status = filterStatus
 
-  const handleAdd = (form: StaffFormData) => {
-    const s: StaffMember = { ...form, id: genId(), patients: 0, rating: Number(form.rating) }
-    setStaff(ps => [s, ...ps])
-    setModal(null)
-    showToast(`${s.name} added`)
+      const [listRes, statsRes] = await Promise.all([
+        staffApi.getAll(params),
+        staffApi.getStats(),
+      ])
+      setStaff(listRes.data)
+      setStats(statsRes.data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load staff')
+    } finally {
+      setLoading(false)
+    }
+  }, [search, filterRole, filterStatus])
+
+  useEffect(() => { fetchData() }, [fetchData])
+
+  const handleAdd = async (form: StaffFormData) => {
+    setSaving(true)
+    try {
+      const payload: CreateStaffPayload = { ...form, rating: Number(form.rating) }
+      const res = await staffApi.create(payload)
+      setStaff(ps => [res.data, ...ps])
+      setModal(null)
+      showToast(`${res.data.name} added`)
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to add', 'var(--red)')
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const handleEdit = (form: StaffFormData) => {
+  const handleEdit = async (form: StaffFormData) => {
     if (modal?.type !== 'edit') return
-    setStaff(ps => ps.map(s => s.id === modal.staff.id ? { ...s, ...form, rating: Number(form.rating) } : s))
-    setModal(null)
-    showToast(`${form.name} updated`)
+    setSaving(true)
+    try {
+      const res = await staffApi.update(modal.staff.staff_id, { ...form, rating: Number(form.rating) })
+      setStaff(ps => ps.map(s => s.staff_id === res.data.staff_id ? res.data : s))
+      setModal(null)
+      showToast(`${res.data.name} updated`)
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to update', 'var(--red)')
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (modal?.type !== 'delete') return
-    const name = modal.staff.name
-    setStaff(ps => ps.filter(s => s.id !== modal.staff.id))
-    setModal(null)
-    showToast(`${name} removed`, 'var(--red)')
+    setDeleting(true)
+    try {
+      const { staff_id, name } = modal.staff
+      await staffApi.delete(staff_id)
+      setStaff(ps => ps.filter(s => s.staff_id !== staff_id))
+      setModal(null)
+      showToast(`${name} removed`, 'var(--red)')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to delete', 'var(--red)')
+    } finally {
+      setDeleting(false)
+    }
   }
 
-  const onDuty    = staff.filter(s => s.status === 'On Duty').length
-  const doctors   = staff.filter(s => s.role === 'Doctor').length
-  const nurses    = staff.filter(s => s.role === 'Nurse').length
+  const toFormData = (s: StaffRow): StaffFormData => ({
+    name:       s.name,
+    role:       s.role,
+    specialty:  s.specialty,
+    status:     s.status,
+    experience: s.experience,
+    rating:     String(s.rating),
+    phone:      s.phone,
+    email:      s.email,
+  })
 
   return (
     <div className="page">
@@ -287,16 +311,14 @@ export default function Staff() {
           <div className="page-header__title">Doctors & Staff</div>
           <div className="page-header__sub">Manage your medical team</div>
         </div>
-        <button className="btn btn-primary" onClick={() => setModal({ type: 'add' })}>
-          + Add Staff Member
-        </button>
+        <button className="btn btn-primary" onClick={() => setModal({ type: 'add' })}>+ Add Staff Member</button>
       </div>
 
       <div className="stat-row">
-        <StatCard label="Total Staff" value={staff.length}  sub="All roles"         color="var(--accent)" />
-        <StatCard label="On Duty"     value={onDuty}        sub="Currently working" color="var(--green)" />
-        <StatCard label="Doctors"     value={doctors}       sub="Medical staff"     color="var(--purple)" />
-        <StatCard label="Nurses"      value={nurses}        sub="Nursing staff"     color="var(--amber)" />
+        <StatCard label="Total Staff" value={stats?.total    ?? '—'} sub="All roles"         color="var(--accent)" />
+        <StatCard label="On Duty"     value={stats?.on_duty  ?? '—'} sub="Currently working" color="var(--green)" />
+        <StatCard label="Doctors"     value={stats?.doctors  ?? '—'} sub="Medical doctors"   color="var(--purple)" />
+        <StatCard label="Nurses"      value={stats?.nurses   ?? '—'} sub="Nursing staff"     color="var(--amber)" />
       </div>
 
       <div className="filter-bar">
@@ -311,13 +333,17 @@ export default function Staff() {
         </select>
       </div>
 
-      {filtered.length === 0 ? (
+      {error ? (
+        <ErrorBox message={error} onRetry={fetchData} />
+      ) : loading ? (
+        <Spinner />
+      ) : staff.length === 0 ? (
         <div className="card empty-state">No staff members found.</div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-          {filtered.map(s => (
+          {staff.map(s => (
             <StaffCard
-              key={s.id}
+              key={s.staff_id}
               staff={s}
               onView={()   => setModal({ type: 'view',   staff: s })}
               onEdit={()   => setModal({ type: 'edit',   staff: s })}
@@ -329,16 +355,16 @@ export default function Staff() {
 
       {modal?.type === 'add' && (
         <Modal title="Add Staff Member" onClose={() => setModal(null)}>
-          <StaffForm initial={{ ...EMPTY }} onSave={handleAdd} onCancel={() => setModal(null)} isEdit={false} />
+          <StaffForm initial={{ ...EMPTY }} onSave={handleAdd} onCancel={() => setModal(null)} isEdit={false} saving={saving} />
         </Modal>
       )}
       {modal?.type === 'edit' && (
         <Modal title="Edit Staff Member" onClose={() => setModal(null)}>
-          <StaffForm initial={{ ...modal.staff, rating: String(modal.staff.rating) }} onSave={handleEdit} onCancel={() => setModal(null)} isEdit={true} />
+          <StaffForm initial={toFormData(modal.staff)} onSave={handleEdit} onCancel={() => setModal(null)} isEdit={true} saving={saving} />
         </Modal>
       )}
       {modal?.type === 'delete' && (
-        <DeleteConfirm staff={modal.staff} onConfirm={handleDelete} onCancel={() => setModal(null)} />
+        <DeleteConfirm staff={modal.staff} onConfirm={handleDelete} onCancel={() => setModal(null)} deleting={deleting} />
       )}
       {modal?.type === 'view' && (
         <ViewModal staff={modal.staff} onClose={() => setModal(null)} onEdit={() => setModal({ type: 'edit', staff: modal.staff })} />

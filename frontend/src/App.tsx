@@ -1,11 +1,11 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import DashboardLayout from '@/components/layout/DashboardLayout'
-import Dashboard  from '@/pages/Dashboard'
-import Patients   from '@/pages/Patients'
-import Staff      from '@/pages/Staff'
-import Revenue    from '@/pages/Revenue'
-import Supplies   from '@/pages/Supplies'
-import NotFound   from '@/pages/NotFound'
+import DashboardLayout from './components/layout/DashboardLayout'
+import Dashboard  from './pages/Dashboard'
+import Patients   from './pages/Patients'
+import Staff      from './pages/Staff'
+import Revenue    from './pages/Revenue'
+import Supplies   from './pages/Supplies'
+import NotFound   from './pages/NotFound'
 
 export default function App() {
   return (
