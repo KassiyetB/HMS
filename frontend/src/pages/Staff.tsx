@@ -3,113 +3,82 @@ import { Badge, StatCard, Toast, Avatar, Modal, Field } from '../components/ui'
 import { Spinner, ErrorBox } from '../hooks/useApi'
 import { staffApi, type StaffRow, type CreateStaffPayload } from '../services/api'
 import { STAFF_ROLES, STAFF_STATUSES, SPECIALTIES } from '../data/mockData'
+import { kz } from '../i18n/kz'
 
-// ── Types ─────────────────────────────────────────
-interface StaffFormData {
-  name:       string
-  role:       string
-  specialty:  string
-  status:     string
-  experience: string
-  rating:     string
-  phone:      string
-  email:      string
-}
-
-type ModalState =
-  | { type: 'add' }
-  | { type: 'edit' | 'delete' | 'view'; staff: StaffRow }
-  | null
-
+interface StaffFormData { name: string; role: string; specialty: string; status: string; experience: string; rating: string; phone: string; email: string }
+type ModalState = { type: 'add' } | { type: 'edit' | 'delete' | 'view'; staff: StaffRow } | null
 interface ToastState { msg: string; color: string }
 interface FormErrors { name?: string; experience?: string; rating?: string; phone?: string; email?: string }
-interface StatsData  { total: string; on_duty: string; off_duty: string; doctors: string; nurses: string; avg_rating: string }
+interface StatsData  { total: string; on_duty: string; doctors: string; nurses: string }
 
-const EMPTY: StaffFormData = {
-  name: '', role: 'Doctor', specialty: SPECIALTIES[0],
-  status: 'On Duty', experience: '', rating: '', phone: '', email: '',
-}
+const EMPTY: StaffFormData = { name: '', role: STAFF_ROLES[0], specialty: SPECIALTIES[0], status: STAFF_STATUSES[0], experience: '', rating: '', phone: '', email: '' }
 
-// ── Staff Form ─────────────────────────────────────
-interface StaffFormProps {
-  initial:  StaffFormData
-  onSave:   (form: StaffFormData) => Promise<void>
-  onCancel: () => void
-  isEdit:   boolean
-  saving:   boolean
-}
-
-function StaffForm({ initial, onSave, onCancel, isEdit, saving }: StaffFormProps) {
+function StaffForm({ initial, onSave, onCancel, isEdit, saving }: { initial: StaffFormData; onSave: (f: StaffFormData) => Promise<void>; onCancel: () => void; isEdit: boolean; saving: boolean }) {
   const [form, setForm]     = useState<StaffFormData>({ ...initial })
   const [errors, setErrors] = useState<FormErrors>({})
   const set = <K extends keyof StaffFormData>(k: K, v: string) => setForm(f => ({ ...f, [k]: v }))
+  const t   = kz.staff
 
-  const validate = (): boolean => {
+  const validate = () => {
     const e: FormErrors = {}
-    if (!form.name.trim())       e.name       = 'Name is required'
-    if (!form.phone.trim())      e.phone      = 'Phone is required'
-    if (!form.email.trim())      e.email      = 'Email is required'
-    if (!form.experience.trim()) e.experience = 'Experience is required'
+    if (!form.name.trim())       e.name       = t.errors.nameRequired
+    if (!form.phone.trim())      e.phone      = t.errors.phoneRequired
+    if (!form.email.trim())      e.email      = t.errors.emailRequired
+    if (!form.experience.trim()) e.experience = t.errors.expRequired
     const r = Number(form.rating)
-    if (!form.rating || r < 1 || r > 5) e.rating = 'Rating must be 1–5'
-    setErrors(e)
-    return Object.keys(e).length === 0
+    if (!form.rating || r < 1 || r > 5) e.rating = t.errors.ratingInvalid
+    setErrors(e); return Object.keys(e).length === 0
   }
 
   return (
     <div>
       <div className="form-grid">
-        <Field label="Full Name" error={errors.name}>
-          <input value={form.name} onChange={e => set('name', e.target.value)} className={errors.name ? 'error' : ''} placeholder="e.g. Dr. Asel Bekova" />
+        <Field label={t.form.fullName} error={errors.name}>
+          <input value={form.name} onChange={e => set('name', e.target.value)} className={errors.name ? 'error' : ''} placeholder={t.form.namePlaceholder} />
         </Field>
-        <Field label="Role" half>
-          <select value={form.role} onChange={e => set('role', e.target.value)}>
-            {STAFF_ROLES.map(r => <option key={r}>{r}</option>)}
-          </select>
+        <Field label={t.form.role} half>
+          <select value={form.role} onChange={e => set('role', e.target.value)}>{STAFF_ROLES.map(r => <option key={r}>{r}</option>)}</select>
         </Field>
-        <Field label="Status" half>
-          <select value={form.status} onChange={e => set('status', e.target.value)}>
-            {STAFF_STATUSES.map(s => <option key={s}>{s}</option>)}
-          </select>
+        <Field label={t.form.status} half>
+          <select value={form.status} onChange={e => set('status', e.target.value)}>{STAFF_STATUSES.map(s => <option key={s}>{s}</option>)}</select>
         </Field>
-        <Field label="Specialty">
+        <Field label={t.form.specialty}>
           <select value={form.specialty} onChange={e => set('specialty', e.target.value)}>
             {SPECIALTIES.map(s => <option key={s}>{s}</option>)}
             <option value="—">—</option>
           </select>
         </Field>
-        <Field label="Experience" half error={errors.experience}>
-          <input value={form.experience} onChange={e => set('experience', e.target.value)} className={errors.experience ? 'error' : ''} placeholder="e.g. 5 yrs" />
+        <Field label={t.form.experience} half error={errors.experience}>
+          <input value={form.experience} onChange={e => set('experience', e.target.value)} className={errors.experience ? 'error' : ''} placeholder={t.form.expPlaceholder} />
         </Field>
-        <Field label="Rating (1–5)" half error={errors.rating}>
+        <Field label={t.form.rating} half error={errors.rating}>
           <input type="number" value={form.rating} onChange={e => set('rating', e.target.value)} className={errors.rating ? 'error' : ''} min={1} max={5} step={0.1} placeholder="4.8" />
         </Field>
-        <Field label="Phone" half error={errors.phone}>
-          <input value={form.phone} onChange={e => set('phone', e.target.value)} className={errors.phone ? 'error' : ''} placeholder="+7 700 000 0000" />
+        <Field label={t.form.phone} half error={errors.phone}>
+          <input value={form.phone} onChange={e => set('phone', e.target.value)} className={errors.phone ? 'error' : ''} placeholder={t.form.phonePlaceholder} />
         </Field>
-        <Field label="Email" half error={errors.email}>
-          <input type="email" value={form.email} onChange={e => set('email', e.target.value)} className={errors.email ? 'error' : ''} placeholder="name@medicare.kz" />
+        <Field label={t.form.email} half error={errors.email}>
+          <input type="email" value={form.email} onChange={e => set('email', e.target.value)} className={errors.email ? 'error' : ''} placeholder={t.form.emailPlaceholder} />
         </Field>
       </div>
       <div className="modal-footer" style={{ padding: 0, marginTop: 20 }}>
-        <button className="btn btn-ghost" onClick={onCancel} disabled={saving}>Cancel</button>
+        <button className="btn btn-ghost" onClick={onCancel} disabled={saving}>{kz.cancel}</button>
         <button className="btn btn-primary" onClick={() => { if (validate()) onSave(form) }} disabled={saving}>
-          {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Staff Member'}
+          {saving ? kz.saving : isEdit ? kz.saveChanges : t.addStaff}
         </button>
       </div>
     </div>
   )
 }
 
-// ── View Modal ─────────────────────────────────────
 function ViewModal({ staff, onClose, onEdit }: { staff: StaffRow; onClose: () => void; onEdit: () => void }) {
+  const t = kz.staff.detail
   const rows: [string, string | number][] = [
-    ['Staff ID', staff.staff_id], ['Role', staff.role], ['Specialty', staff.specialty],
-    ['Experience', staff.experience], ['Rating', `${staff.rating} / 5`],
-    ['Phone', staff.phone], ['Email', staff.email],
+    [t.staffId, staff.staff_id], [t.role, staff.role], [t.specialty, staff.specialty],
+    [t.experience, staff.experience], [t.rating, `${staff.rating} / 5`], [t.phone, staff.phone], [t.email, staff.email],
   ]
   return (
-    <Modal title="Staff Details" onClose={onClose}>
+    <Modal title={kz.staff.staffDetails} onClose={onClose}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
         <Avatar name={staff.name} size={48} color="var(--purple)" />
         <div style={{ flex: 1 }}>
@@ -126,42 +95,38 @@ function ViewModal({ staff, onClose, onEdit }: { staff: StaffRow; onClose: () =>
           </div>
         ))}
       </div>
-      {staff.role === 'Doctor' && (
+      {staff.role === STAFF_ROLES[0] && (
         <div style={{ background: 'var(--bg)', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--border)', marginBottom: 16 }}>
-          <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Current Patients</div>
+          <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{kz.staff.currentPatients}</div>
           <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)' }}>{staff.patients}</div>
         </div>
       )}
       <div className="modal-footer" style={{ padding: 0 }}>
-        <button className="btn btn-ghost" onClick={onClose}>Close</button>
-        <button className="btn btn-primary" onClick={onEdit}>Edit</button>
+        <button className="btn btn-ghost" onClick={onClose}>{kz.close}</button>
+        <button className="btn btn-primary" onClick={onEdit}>{kz.edit}</button>
       </div>
     </Modal>
   )
 }
 
-// ── Delete Confirm ─────────────────────────────────
 function DeleteConfirm({ staff, onConfirm, onCancel, deleting }: { staff: StaffRow; onConfirm: () => void; onCancel: () => void; deleting: boolean }) {
   return (
-    <Modal title="Remove Staff Member" onClose={onCancel} maxWidth={420}>
+    <Modal title={kz.staff.deleteStaff} onClose={onCancel} maxWidth={420}>
       <div style={{ textAlign: 'center', padding: '0.5rem 0 1rem' }}>
         <div style={{ fontSize: 36, marginBottom: 12 }}>🗑️</div>
         <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>
-          Remove <span style={{ color: 'var(--accent)' }}>{staff.name}</span>?
+          <span style={{ color: 'var(--accent)' }}>{staff.name}</span> {kz.staff.confirmDelete}
         </div>
-        <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24 }}>This cannot be undone.</div>
+        <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24 }}>{kz.staff.deleteWarning}</div>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-          <button className="btn btn-ghost" onClick={onCancel} disabled={deleting}>Cancel</button>
-          <button className="btn btn-danger" onClick={onConfirm} disabled={deleting}>
-            {deleting ? 'Removing…' : 'Yes, Remove'}
-          </button>
+          <button className="btn btn-ghost" onClick={onCancel} disabled={deleting}>{kz.cancel}</button>
+          <button className="btn btn-danger" onClick={onConfirm} disabled={deleting}>{deleting ? kz.removing : kz.staff.yesRemove}</button>
         </div>
       </div>
     </Modal>
   )
 }
 
-// ── Staff Card ─────────────────────────────────────
 function StaffCard({ staff, onView, onEdit, onDelete }: { staff: StaffRow; onView: () => void; onEdit: () => void; onDelete: () => void }) {
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -174,73 +139,48 @@ function StaffCard({ staff, onView, onEdit, onDelete }: { staff: StaffRow; onVie
         <Badge status={staff.status as any} />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
-        {staff.role === 'Doctor' && (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 2 }}>Patients</div>
-            <div style={{ fontWeight: 700, color: 'var(--accent)' }}>{staff.patients}</div>
-          </div>
-        )}
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 2 }}>Exp</div>
-          <div style={{ fontWeight: 600 }}>{staff.experience}</div>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 2 }}>Rating</div>
-          <div style={{ fontWeight: 700, color: 'var(--amber)' }}>{staff.rating} ★</div>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 2 }}>Role</div>
-          <div style={{ fontWeight: 500, fontSize: 12 }}>{staff.role}</div>
-        </div>
+        {staff.role === STAFF_ROLES[0] && <div style={{ textAlign: 'center' }}><div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 2 }}>Науқас</div><div style={{ fontWeight: 700, color: 'var(--accent)' }}>{staff.patients}</div></div>}
+        <div style={{ textAlign: 'center' }}><div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 2 }}>Тәжірибе</div><div style={{ fontWeight: 600 }}>{staff.experience}</div></div>
+        <div style={{ textAlign: 'center' }}><div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 2 }}>Рейтинг</div><div style={{ fontWeight: 700, color: 'var(--amber)' }}>{staff.rating} ★</div></div>
+        <div style={{ textAlign: 'center' }}><div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 2 }}>Лауазым</div><div style={{ fontWeight: 500, fontSize: 12 }}>{staff.role}</div></div>
       </div>
       <div style={{ display: 'flex', gap: 6, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
-        <button onClick={onView}   style={{ flex: 1, padding: '6px', borderRadius: 6, border: '1px solid var(--border-2)', background: 'none', color: 'var(--muted)',  cursor: 'pointer', fontSize: 12 }}>👁 View</button>
-        <button onClick={onEdit}   style={{ flex: 1, padding: '6px', borderRadius: 6, border: '1px solid var(--border-2)', background: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: 12 }}>✏️ Edit</button>
-        <button onClick={onDelete} style={{ flex: 1, padding: '6px', borderRadius: 6, border: '1px solid var(--red)33',    background: 'none', color: 'var(--red)',    cursor: 'pointer', fontSize: 12 }}>🗑 Remove</button>
+        <button onClick={onView}   style={{ flex: 1, padding: '6px', borderRadius: 6, border: '1px solid var(--border-2)', background: 'none', color: 'var(--muted)',  cursor: 'pointer', fontSize: 12 }}>👁 {kz.view}</button>
+        <button onClick={onEdit}   style={{ flex: 1, padding: '6px', borderRadius: 6, border: '1px solid var(--border-2)', background: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: 12 }}>✏️ {kz.edit}</button>
+        <button onClick={onDelete} style={{ flex: 1, padding: '6px', borderRadius: 6, border: '1px solid var(--red)33',    background: 'none', color: 'var(--red)',    cursor: 'pointer', fontSize: 12 }}>🗑 {kz.delete}</button>
       </div>
     </div>
   )
 }
 
-// ── Main Page ──────────────────────────────────────
 export default function Staff() {
-  const [staff, setStaff]   = useState<StaffRow[]>([])
-  const [stats, setStats]   = useState<StatsData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError]   = useState<string | null>(null)
-  const [modal, setModal]   = useState<ModalState>(null)
-  const [saving, setSaving] = useState(false)
+  const [staff, setStaff]       = useState<StaffRow[]>([])
+  const [stats, setStats]       = useState<StatsData | null>(null)
+  const [loading, setLoading]   = useState(true)
+  const [error, setError]       = useState<string | null>(null)
+  const [modal, setModal]       = useState<ModalState>(null)
+  const [saving, setSaving]     = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [search, setSearch] = useState('')
-  const [filterRole, setFilterRole]     = useState('All')
-  const [filterStatus, setFilterStatus] = useState('All')
-  const [toast, setToast]   = useState<ToastState | null>(null)
+  const [search, setSearch]     = useState('')
+  const [filterRole, setFilterRole]     = useState(kz.all)
+  const [filterStatus, setFilterStatus] = useState(kz.all)
+  const [toast, setToast]       = useState<ToastState | null>(null)
+  const t = kz.staff
 
-  const showToast = (msg: string, color = 'var(--green)') => {
-    setToast({ msg, color })
-    setTimeout(() => setToast(null), 2800)
-  }
+  const showToast = (msg: string, color = 'var(--green)') => { setToast({ msg, color }); setTimeout(() => setToast(null), 2800) }
 
   const fetchData = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true); setError(null)
     try {
       const params: Record<string, string> = {}
-      if (search)                 params.search = search
-      if (filterRole !== 'All')   params.role   = filterRole
-      if (filterStatus !== 'All') params.status = filterStatus
-
-      const [listRes, statsRes] = await Promise.all([
-        staffApi.getAll(params),
-        staffApi.getStats(),
-      ])
-      setStaff(listRes.data)
-      setStats(statsRes.data)
+      if (search)                params.search = search
+      if (filterRole !== kz.all) params.role   = filterRole
+      if (filterStatus !== kz.all) params.status = filterStatus
+      const [listRes, statsRes] = await Promise.all([staffApi.getAll(params), staffApi.getStats()])
+      setStaff(listRes.data); setStats(statsRes.data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load staff')
-    } finally {
-      setLoading(false)
-    }
+      setError(err instanceof Error ? err.message : kz.error.loadStaff)
+    } finally { setLoading(false) }
   }, [search, filterRole, filterStatus])
 
   useEffect(() => { fetchData() }, [fetchData])
@@ -250,14 +190,10 @@ export default function Staff() {
     try {
       const payload: CreateStaffPayload = { ...form, rating: Number(form.rating) }
       const res = await staffApi.create(payload)
-      setStaff(ps => [res.data, ...ps])
-      setModal(null)
-      showToast(`${res.data.name} added`)
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Failed to add', 'var(--red)')
-    } finally {
-      setSaving(false)
-    }
+      setStaff(ps => [res.data, ...ps]); setModal(null)
+      showToast(`${res.data.name} ${t.toast.added}`)
+    } catch (err) { showToast(err instanceof Error ? err.message : t.toast.addFail, 'var(--red)') }
+    finally { setSaving(false) }
   }
 
   const handleEdit = async (form: StaffFormData) => {
@@ -265,14 +201,10 @@ export default function Staff() {
     setSaving(true)
     try {
       const res = await staffApi.update(modal.staff.staff_id, { ...form, rating: Number(form.rating) })
-      setStaff(ps => ps.map(s => s.staff_id === res.data.staff_id ? res.data : s))
-      setModal(null)
-      showToast(`${res.data.name} updated`)
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Failed to update', 'var(--red)')
-    } finally {
-      setSaving(false)
-    }
+      setStaff(ps => ps.map(s => s.staff_id === res.data.staff_id ? res.data : s)); setModal(null)
+      showToast(`${res.data.name} ${t.toast.updated}`)
+    } catch (err) { showToast(err instanceof Error ? err.message : t.toast.updFail, 'var(--red)') }
+    finally { setSaving(false) }
   }
 
   const handleDelete = async () => {
@@ -281,94 +213,43 @@ export default function Staff() {
     try {
       const { staff_id, name } = modal.staff
       await staffApi.delete(staff_id)
-      setStaff(ps => ps.filter(s => s.staff_id !== staff_id))
-      setModal(null)
-      showToast(`${name} removed`, 'var(--red)')
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Failed to delete', 'var(--red)')
-    } finally {
-      setDeleting(false)
-    }
+      setStaff(ps => ps.filter(s => s.staff_id !== staff_id)); setModal(null)
+      showToast(`${name} ${t.toast.removed}`, 'var(--red)')
+    } catch (err) { showToast(err instanceof Error ? err.message : t.toast.delFail, 'var(--red)') }
+    finally { setDeleting(false) }
   }
 
-  const toFormData = (s: StaffRow): StaffFormData => ({
-    name:       s.name,
-    role:       s.role,
-    specialty:  s.specialty,
-    status:     s.status,
-    experience: s.experience,
-    rating:     String(s.rating),
-    phone:      s.phone,
-    email:      s.email,
-  })
+  const toFormData = (s: StaffRow): StaffFormData => ({ name: s.name, role: s.role, specialty: s.specialty, status: s.status, experience: s.experience, rating: String(s.rating), phone: s.phone, email: s.email })
 
   return (
     <div className="page">
       {toast && <Toast message={toast.msg} color={toast.color} />}
-
       <div className="page-header">
-        <div>
-          <div className="page-header__title">Doctors & Staff</div>
-          <div className="page-header__sub">Manage your medical team</div>
-        </div>
-        <button className="btn btn-primary" onClick={() => setModal({ type: 'add' })}>+ Add Staff Member</button>
+        <div><div className="page-header__title">{t.title}</div><div className="page-header__sub">{t.subtitle}</div></div>
+        <button className="btn btn-primary" onClick={() => setModal({ type: 'add' })}>{t.addStaff}</button>
       </div>
-
       <div className="stat-row">
-        <StatCard label="Total Staff" value={stats?.total    ?? '—'} sub="All roles"         color="var(--accent)" />
-        <StatCard label="On Duty"     value={stats?.on_duty  ?? '—'} sub="Currently working" color="var(--green)" />
-        <StatCard label="Doctors"     value={stats?.doctors  ?? '—'} sub="Medical doctors"   color="var(--purple)" />
-        <StatCard label="Nurses"      value={stats?.nurses   ?? '—'} sub="Nursing staff"     color="var(--amber)" />
+        <StatCard label={t.totalStaff}  value={stats?.total   ?? '—'} sub={t.allRoles}        color="var(--accent)" />
+        <StatCard label={t.onDuty}      value={stats?.on_duty ?? '—'} sub={t.currentlyWorking} color="var(--green)" />
+        <StatCard label={t.doctors}     value={stats?.doctors ?? '—'} sub={t.medicalDoctors}   color="var(--purple)" />
+        <StatCard label={t.nurses}      value={stats?.nurses  ?? '—'} sub={t.nursingStaff}     color="var(--amber)" />
       </div>
-
       <div className="filter-bar">
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍  Search by name, ID or specialty…" />
-        <select value={filterRole} onChange={e => setFilterRole(e.target.value)}>
-          <option>All</option>
-          {STAFF_ROLES.map(r => <option key={r}>{r}</option>)}
-        </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-          <option>All</option>
-          {STAFF_STATUSES.map(s => <option key={s}>{s}</option>)}
-        </select>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t.searchPlaceholder} />
+        <select value={filterRole} onChange={e => setFilterRole(e.target.value)}><option>{kz.all}</option>{STAFF_ROLES.map(r => <option key={r}>{r}</option>)}</select>
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}><option>{kz.all}</option>{STAFF_STATUSES.map(s => <option key={s}>{s}</option>)}</select>
       </div>
-
-      {error ? (
-        <ErrorBox message={error} onRetry={fetchData} />
-      ) : loading ? (
-        <Spinner />
-      ) : staff.length === 0 ? (
-        <div className="card empty-state">No staff members found.</div>
+      {error ? <ErrorBox message={error} onRetry={fetchData} /> : loading ? <Spinner /> : staff.length === 0 ? (
+        <div className="card empty-state">{t.noStaff}</div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-          {staff.map(s => (
-            <StaffCard
-              key={s.staff_id}
-              staff={s}
-              onView={()   => setModal({ type: 'view',   staff: s })}
-              onEdit={()   => setModal({ type: 'edit',   staff: s })}
-              onDelete={()  => setModal({ type: 'delete', staff: s })}
-            />
-          ))}
+          {staff.map(s => <StaffCard key={s.staff_id} staff={s} onView={() => setModal({ type: 'view', staff: s })} onEdit={() => setModal({ type: 'edit', staff: s })} onDelete={() => setModal({ type: 'delete', staff: s })} />)}
         </div>
       )}
-
-      {modal?.type === 'add' && (
-        <Modal title="Add Staff Member" onClose={() => setModal(null)}>
-          <StaffForm initial={{ ...EMPTY }} onSave={handleAdd} onCancel={() => setModal(null)} isEdit={false} saving={saving} />
-        </Modal>
-      )}
-      {modal?.type === 'edit' && (
-        <Modal title="Edit Staff Member" onClose={() => setModal(null)}>
-          <StaffForm initial={toFormData(modal.staff)} onSave={handleEdit} onCancel={() => setModal(null)} isEdit={true} saving={saving} />
-        </Modal>
-      )}
-      {modal?.type === 'delete' && (
-        <DeleteConfirm staff={modal.staff} onConfirm={handleDelete} onCancel={() => setModal(null)} deleting={deleting} />
-      )}
-      {modal?.type === 'view' && (
-        <ViewModal staff={modal.staff} onClose={() => setModal(null)} onEdit={() => setModal({ type: 'edit', staff: modal.staff })} />
-      )}
+      {modal?.type === 'add'    && <Modal title={t.addNewStaff}  onClose={() => setModal(null)}><StaffForm initial={{ ...EMPTY }} onSave={handleAdd} onCancel={() => setModal(null)} isEdit={false} saving={saving} /></Modal>}
+      {modal?.type === 'edit'   && <Modal title={t.editStaff}    onClose={() => setModal(null)}><StaffForm initial={toFormData(modal.staff)} onSave={handleEdit} onCancel={() => setModal(null)} isEdit={true} saving={saving} /></Modal>}
+      {modal?.type === 'delete' && <DeleteConfirm staff={modal.staff} onConfirm={handleDelete} onCancel={() => setModal(null)} deleting={deleting} />}
+      {modal?.type === 'view'   && <ViewModal staff={modal.staff} onClose={() => setModal(null)} onEdit={() => setModal({ type: 'edit', staff: modal.staff })} />}
     </div>
   )
 }
