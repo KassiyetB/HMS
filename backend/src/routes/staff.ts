@@ -1,37 +1,37 @@
 import { Router } from 'express'
 import { body } from 'express-validator'
 import {
-  getAllStaff,
-  getStaffById,
-  createStaff,
-  updateStaff,
-  deleteStaff,
-  getStaffStats,
+  getAllStaff, getStaffById, createStaff,
+  updateStaff, deleteStaff, getStaffStats,
 } from '../controllers/staffController'
+import { verifyToken, requireRole } from '../middleware/auth'
 
 const router = Router()
+router.use(verifyToken)
 
-// ── Validation rules ──────────────────────────────
+// Қызметкерлер: тек Дәрігер және Әкімші
+// Дәрігер — тек қарай алады, Әкімші — барлығын жасай алады
+const READ        = ['Әкімші', 'Дәрігер']
+const ADMIN_ONLY  = ['Әкімші']
+
 const staffRules = [
-  body('name')       .trim().notEmpty().withMessage('Name is required'),
-  body('role')       .isIn(['Doctor', 'Nurse', 'Lab Technician', 'Receptionist', 'Pharmacist']).withMessage('Invalid role'),
-  body('specialty')  .optional().trim(),
-  body('status')     .optional().isIn(['On Duty', 'Off Duty', 'On Leave']).withMessage('Invalid status'),
-  body('experience') .trim().notEmpty().withMessage('Experience is required'),
-  body('rating')     .isFloat({ min: 1, max: 5 }).withMessage('Rating must be between 1 and 5'),
-  body('phone')      .trim().notEmpty().withMessage('Phone is required'),
-  body('email')      .isEmail().withMessage('Valid email is required').normalizeEmail(),
-  body('patients')   .optional().isInt({ min: 0 }),
+  body('name')      .trim().notEmpty().withMessage('Аты-жөні міндетті'),
+  body('role')      .isIn(['Дәрігер','Мейіргер','Зертханашы','Регистратор','Фармацевт']).withMessage('Жарамсыз лауазым'),
+  body('specialty') .optional().trim(),
+  body('status')    .optional().isIn(['Кезекте','Кезектен тыс','Демалыста']),
+  body('experience').trim().notEmpty().withMessage('Тәжірибе міндетті'),
+  body('rating')    .isFloat({ min: 1, max: 5 }).withMessage('Рейтинг 1-5 аралығында болуы керек'),
+  body('phone')     .trim().notEmpty().withMessage('Телефон міндетті'),
+  body('email')     .isEmail().withMessage('Email дұрыс емес').normalizeEmail(),
+  body('patients')  .optional().isInt({ min: 0 }),
 ]
+const updateRules = staffRules.map(r => r.optional())
 
-const updateRules = staffRules.map(rule => rule.optional())
-
-// ── Routes ────────────────────────────────────────
-router.get   ('/',      getAllStaff)               // GET    /api/staff
-router.get   ('/stats', getStaffStats)             // GET    /api/staff/stats
-router.get   ('/:id',   getStaffById)              // GET    /api/staff/S-001
-router.post  ('/',      staffRules,  createStaff)  // POST   /api/staff
-router.put   ('/:id',   updateRules, updateStaff)  // PUT    /api/staff/S-001
-router.delete('/:id',   deleteStaff)               // DELETE /api/staff/S-001
+router.get   ('/',       requireRole(...READ),       getAllStaff)
+router.get   ('/stats',  requireRole(...READ),       getStaffStats)
+router.get   ('/:id',    requireRole(...READ),       getStaffById)
+router.post  ('/',       requireRole(...ADMIN_ONLY), staffRules,  createStaff)
+router.put   ('/:id',    requireRole(...ADMIN_ONLY), updateRules, updateStaff)
+router.delete('/:id',    requireRole(...ADMIN_ONLY), deleteStaff)
 
 export default router

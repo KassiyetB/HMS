@@ -127,3 +127,46 @@ export interface PatientQuery  { search?: string; status?: string; doctor?: stri
 export interface StaffQuery    { search?: string; role?: string; status?: string; page?: string; limit?: string }
 export interface BillQuery     { search?: string; status?: string; page?: string; limit?: string }
 export interface SupplyQuery   { search?: string; category?: string; page?: string; limit?: string }
+
+// ── Пайдаланушы (User / Auth) ─────────────────────
+export interface User {
+  id:             number
+  email:          string
+  password:       string
+  name:           string
+  role:           string
+  staff_id:       string | null
+  is_active:      boolean
+  allowed_routes: string[] | null  // null = use role default
+  created_at:     string
+  updated_at:     string
+}
+
+export interface JwtPayload {
+  id:             number
+  email:          string
+  name:           string
+  role:           string
+  staff_id:       string | null
+  allowed_routes: string[] | null
+}
+
+export interface LoginDTO {
+  email:    string
+  password: string
+}
+
+// ── Рөл рұқсаттары ────────────────────────────────
+// route → рұқсат етілген рөлдер
+export const ROLE_PERMISSIONS: Record<string, string[]> = {
+  // Барлық рөлдер басқару тақтасын көреді
+  '/dashboard': ['Әкімші', 'Дәрігер', 'Мейіргер', 'Зертханашы', 'Регистратор', 'Фармацевт'],
+  // Науқастар: Дәрігер, Мейіргер, Регистратор, Әкімші
+  '/patients':  ['Әкімші', 'Дәрігер', 'Мейіргер', 'Регистратор'],
+  // Қызметкерлер: тек Дәрігер және Әкімші
+  '/staff':     ['Әкімші', 'Дәрігер'],
+  // Кіріс/Шоттар: тек Регистратор және Әкімші
+  '/revenue':   ['Әкімші', 'Регистратор'],
+  // Дәрі-дәрмектер: Зертханашы, Фармацевт, Әкімші
+  '/supplies':  ['Әкімші', 'Зертханашы', 'Фармацевт'],
+}

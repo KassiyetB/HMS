@@ -7,9 +7,15 @@ const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api'
 
 // ── Generic fetch wrapper ─────────────────────────
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = localStorage.getItem('medicare_token')
+
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options?.headers ?? {}),
+    },
   })
 
   const json = await res.json()
@@ -182,4 +188,30 @@ export const staffApi = {
 
   delete: (id: string) =>
     request<{ success: boolean; message: string }>(`/staff/${id}`, { method: 'DELETE' }),
+}
+
+// ─────────────────────────────────────────────────
+//  User Permissions API (Admin only)
+// ─────────────────────────────────────────────────
+export interface UserRecord {
+  id:             number
+  email:          string
+  name:           string
+  role:           string
+  staff_id:       string | null
+  is_active:      boolean
+  allowed_routes: string[] | null
+  allowedRoutes:  string[]
+  created_at:     string
+}
+
+export const userApi = {
+  getAll: () =>
+    request<{ success: boolean; data: UserRecord[] }>('/auth/users'),
+
+  updatePermissions: (id: number, allowed_routes: string[] | null) =>
+    request<{ success: boolean; data: UserRecord; message: string }>(
+      `/auth/users/${id}/permissions`,
+      { method: 'PATCH', body: JSON.stringify({ allowed_routes }) }
+    ),
 }
