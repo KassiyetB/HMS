@@ -144,5 +144,5 @@ Open **http://localhost:5173** in your browser.
 
 ## 📄 Documentation
 
-- [`hospital-backend/README.md`](./backend/README.md) — API reference, database setup, endpoints
+- [`backend/README.md`](./backend/README.md) — API reference, database setup, endpoints
 - [`frontend/README.md`](./frontend/README.md) — Frontend architecture, components, pages

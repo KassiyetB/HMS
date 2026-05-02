@@ -1,4 +1,4 @@
-# 🏥 МедиКер — Backend API
+# 🏥 ErentauMed — Backend API
 
 Node.js + Express + TypeScript REST API for the MediCare Hospital Management System. Connects to PostgreSQL and serves all data to the React frontend.
 
@@ -7,7 +7,7 @@ Node.js + Express + TypeScript REST API for the MediCare Hospital Management Sys
 ## 📁 Project Structure
 
 ```
-hospital-backend-kz/
+backend/
 ├── src/
 │   ├── index.ts                    # Express app entry point, middleware, route mounting
 │   ├── types/

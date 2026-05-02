@@ -1,4 +1,4 @@
-# 🏥 МедиКер — Frontend Dashboard
+# 🏥 ErentauMed — Frontend Dashboard
 
 React 18 + TypeScript single-page application for the MediCare Hospital Management System. Dark-themed, fully localised in **Kazakh Cyrillic**, with role-based navigation and live backend integration.
 
@@ -7,7 +7,7 @@ React 18 + TypeScript single-page application for the MediCare Hospital Manageme
 ## 📁 Project Structure
 
 ```
-hospital-dashboard-kz/
+frontend/
 ├── src/
 │   ├── main.tsx                    # React entry point — BrowserRouter + AuthProvider
 │   ├── App.tsx                     # Route definitions + ProtectedRoute wrappers
