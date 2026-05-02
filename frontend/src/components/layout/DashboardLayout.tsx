@@ -54,7 +54,7 @@ export default function DashboardLayout() {
         <div style={{ padding: '1.1rem 1rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 34, height: 34, borderRadius: 9, background: 'var(--accent)22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>⚕️</div>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700 }}>МедиКер</div>
+            <div style={{ fontSize: 14, fontWeight: 700 }}>ErentauMed</div>
             <div style={{ fontSize: 10, color: 'var(--muted)' }}>Медициналық орталық</div>
           </div>
         </div>

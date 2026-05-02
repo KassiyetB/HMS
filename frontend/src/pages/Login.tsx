@@ -50,7 +50,7 @@ export default function Login() {
             fontSize: 32, margin: '0 auto 1rem',
             border: '1px solid var(--accent)33',
           }}>⚕️</div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>МедиКер</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>ErentauMed</h1>
           <p style={{ fontSize: 13, color: 'var(--muted)' }}>Медициналық орталық — жүйеге кіру</p>
         </div>
 
