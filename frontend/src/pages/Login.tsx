@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
@@ -11,6 +11,18 @@ export default function Login() {
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
   const [showPass, setShowPass] = useState(false)
+  const [showDisclaimer, setShowDisclaimer] = useState(false)
+
+  // Show disclaimer once per session
+  useEffect(() => {
+    const seen = sessionStorage.getItem('disclaimer_seen')
+    if (!seen) setShowDisclaimer(true)
+  }, [])
+
+  const acceptDisclaimer = () => {
+    sessionStorage.setItem('disclaimer_seen', 'true')
+    setShowDisclaimer(false)
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -28,6 +40,96 @@ export default function Login() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // ── Disclaimer Modal ────────────────────────────
+  if (showDisclaimer) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: 'var(--bg)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1rem',
+      }}>
+        <div style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
+          width: '100%',
+          maxWidth: 520,
+          overflow: 'hidden',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+        }}>
+          {/* Header */}
+          <div style={{
+            background: 'var(--amber)',
+            padding: '1rem 1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+          }}>
+            <span style={{ fontSize: 24 }}>⚠️</span>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#000' }}>Demo Website — Important Notice</div>
+              <div style={{ fontSize: 12, color: '#00000099' }}>Please read before continuing</div>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div style={{ padding: '1.5rem' }}>
+            <p style={{ fontSize: 13.5, color: 'var(--text)', lineHeight: 1.75, marginBottom: '1rem' }}>
+              This is a <strong>demonstration version</strong> of the МедиКер Hospital Management System,
+              developed as part of an internship project at <strong>ErentauMed LLP</strong>.
+            </p>
+
+            <div style={{
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              padding: '1rem',
+              marginBottom: '1rem',
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--amber)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+                ⚠  Data Disclaimer
+              </div>
+              <ul style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.8, paddingLeft: '1.2rem', margin: 0 }}>
+                <li>All patient names, records, and clinical data are <strong style={{ color: 'var(--text)' }}>entirely fictional</strong></li>
+                <li>Staff names and contact details are <strong style={{ color: 'var(--text)' }}>sample data only</strong></li>
+                <li>Medical supplies shown (e.g. Paracetamol, Amoxicillin) are <strong style={{ color: 'var(--text)' }}>generic pharmaceutical examples</strong> — they do not represent ErentauMed's actual products, which include herbal and traditional medicines</li>
+                <li>Financial figures are <strong style={{ color: 'var(--text)' }}>randomly generated</strong> and do not reflect real billing data</li>
+              </ul>
+            </div>
+
+            <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.7, marginBottom: '1.25rem' }}>
+              The actual ErentauMed LLP system uses proprietary treatment and product data that cannot be
+              disclosed publicly. This demo uses standard medical examples solely to demonstrate the
+              system's functionality for academic evaluation purposes.
+            </p>
+
+            <button
+              onClick={acceptDisclaimer}
+              style={{
+                width: '100%',
+                padding: '11px',
+                borderRadius: 8,
+                border: 'none',
+                background: 'var(--accent)',
+                color: '#000',
+                fontWeight: 700,
+                fontSize: 14,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              I Understand — Continue to Login
+            </button>
+          </div>
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    )
   }
 
   return (
@@ -50,7 +152,7 @@ export default function Login() {
             fontSize: 32, margin: '0 auto 1rem',
             border: '1px solid var(--accent)33',
           }}>⚕️</div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>МедиКер</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>ErentauMed</h1>
           <p style={{ fontSize: 13, color: 'var(--muted)' }}>Медициналық орталық — жүйеге кіру</p>
         </div>
 
