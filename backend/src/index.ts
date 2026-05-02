@@ -14,18 +14,33 @@ dotenv.config()
 const app  = express()
 const PORT = process.env.PORT || 5000
 
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true }))
+// Strip trailing slash from CLIENT_URL if present
+const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, '')
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (curl, mobile apps, health checks)
+    if (!origin) return callback(null, true)
+    // Strip trailing slash from incoming origin before comparing
+    const normalised = origin.replace(/\/$/, '')
+    if (normalised === clientUrl) return callback(null, true)
+    callback(new Error(`CORS blocked: ${origin}`))
+  },
+  credentials: true,
+}))
+
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(requestLogger)
 
-// ── Маршруттар ────────────────────────────────────
-app.use('/api/auth',     authRoutes)      // Жалпы қолжетімді
-app.use('/api/patients', patientRoutes)   // Токен + рөл қажет
-app.use('/api/staff',    staffRoutes)     // Токен + рөл қажет
-app.use('/api/bills',    billRoutes)      // Токен + рөл қажет
-app.use('/api/supplies', supplyRoutes)    // Токен + рөл қажет
+// ── Routes ────────────────────────────────────────
+app.use('/api/auth',     authRoutes)
+app.use('/api/patients', patientRoutes)
+app.use('/api/staff',    staffRoutes)
+app.use('/api/bills',    billRoutes)
+app.use('/api/supplies', supplyRoutes)
 
+// ── Health check ──────────────────────────────────
 app.get('/health', (_req, res) => {
   res.json({ status: 'жұмыс істеуде', timestamp: new Date().toISOString() })
 })
@@ -35,11 +50,11 @@ app.use(errorHandler)
 
 app.listen(PORT, () => {
   console.log(`\n🏥 МедиКер API іске қосылды → http://localhost:${PORT}`)
-  console.log(`   Кіру      → POST http://localhost:${PORT}/api/auth/login`)
-  console.log(`   Науқастар → http://localhost:${PORT}/api/patients`)
-  console.log(`   Қызметкер → http://localhost:${PORT}/api/staff`)
-  console.log(`   Шоттар    → http://localhost:${PORT}/api/bills`)
-  console.log(`   Дәрілер   → http://localhost:${PORT}/api/supplies\n`)
+  console.log(`   CORS allowed origin: ${clientUrl}`)
+  console.log(`   Науқастар  → /api/patients`)
+  console.log(`   Қызметкер  → /api/staff`)
+  console.log(`   Шоттар     → /api/bills`)
+  console.log(`   Дәрілер    → /api/supplies\n`)
 })
 
 export default app

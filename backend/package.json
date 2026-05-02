@@ -1,7 +1,7 @@
 {
   "name": "hospital-backend-kz",
   "version": "1.0.0",
-  "description": "МедиКер ауруханасы API",
+  "description": "\u041c\u0435\u0434\u0438\u041a\u0435\u0440 \u0430\u0443\u0440\u0443\u0445\u0430\u043d\u0430\u0441\u044b API",
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
