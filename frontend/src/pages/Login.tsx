@@ -80,7 +80,7 @@ export default function Login() {
           {/* Body */}
           <div style={{ padding: '1.5rem' }}>
             <p style={{ fontSize: 13.5, color: 'var(--text)', lineHeight: 1.75, marginBottom: '1rem' }}>
-              This is a <strong>demonstration version</strong> of the МедиКер Hospital Management System,
+              This is a <strong>demonstration version</strong> of the ErentauMed Hospital Management System,
               developed as part of an internship project at <strong>ErentauMed LLP</strong>.
             </p>
 
