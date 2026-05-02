@@ -1,4 +1,4 @@
-# 🏥 МедиКер — Hospital Management System
+# 🏥 ErentauMed — Hospital Management System
 
 A full-stack hospital management system built for **ErentauMed LLP**, a private medical care centre in Almaty, Kazakhstan. The system digitalises core administrative workflows — patient records, staff management, medical supplies inventory, and billing — with a fully **Kazakh Cyrillic** interface and **role-based access control**.
 
@@ -7,9 +7,9 @@ A full-stack hospital management system built for **ErentauMed LLP**, a private 
 ## 📁 Project Structure
 
 ```
-medicare/
-├── hospital-backend-kz/     # Node.js + Express + TypeScript REST API
-├── hospital-dashboard-kz/   # React 18 + TypeScript frontend (Vite)
+HMS/
+├── backend/     # Node.js + Express + TypeScript REST API
+├── frontend/   # React 18 + TypeScript frontend (Vite)
 └── README.md                # ← You are here
 ```
 
@@ -38,11 +38,11 @@ medicare/
 
 ```bash
 # Install backend dependencies
-cd hospital-backend-kz
+cd backend
 npm install
 
 # Install frontend dependencies
-cd ../hospital-dashboard-kz
+cd ../frontend
 npm install
 ```
 
@@ -50,14 +50,14 @@ npm install
 
 ```bash
 # Backend
-cd hospital-backend-kz
+cd backend
 cp .env.example .env
 # Edit .env — set DB_PASSWORD and JWT_SECRET
 ```
 
 ```bash
 # Frontend
-cd hospital-dashboard-kz
+cd frontend
 cp .env.example .env
 # VITE_API_URL=http://localhost:5000/api  (already set)
 ```
@@ -65,7 +65,7 @@ cp .env.example .env
 ### 3. Set up the database
 
 ```bash
-cd hospital-backend-kz
+cd backend
 
 # Create tables
 npm run db:migrate
@@ -87,11 +87,11 @@ npm run db:seed-users
 
 ```bash
 # Terminal 1 — Backend (port 5000)
-cd hospital-backend-kz
+cd backend
 npm run dev
 
 # Terminal 2 — Frontend (port 5173)
-cd hospital-dashboard-kz
+cd frontend
 npm run dev
 ```
 
@@ -144,5 +144,5 @@ Open **http://localhost:5173** in your browser.
 
 ## 📄 Documentation
 
-- [`hospital-backend-kz/README.md`](./hospital-backend-kz/README.md) — API reference, database setup, endpoints
-- [`hospital-dashboard-kz/README.md`](./hospital-dashboard-kz/README.md) — Frontend architecture, components, pages
+- [`hospital-backend/README.md`](./backend/README.md) — API reference, database setup, endpoints
+- [`frontend/README.md`](./frontend/README.md) — Frontend architecture, components, pages
